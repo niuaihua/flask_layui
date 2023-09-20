@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>执行脚本</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.5.6/css/layui.css">
+    <style>
+        /* 更改 layui 下拉框的宽度 */
+        .layui-form-select {
+            width: 1000px; /* 设置宽度为 1000 像素，可以根据需要调整 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="layui-form">
+   <form class="layui-form" action="">
+    <div class="layui-form-item">
+        <label class="layui-form-label">目录1：</label>
+        <div class="layui-input-inline">
+            <select name="directory1">
+                <option value="">不选择参数</option>
+                {% for option in directory1_options %}
+                    <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">目录2：</label>
+        <div class="layui-input-inline">
+            <select name="directory2">
+                <option value="">不选择参数</option>
+                {% for option in directory2_options %}
+                    <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">Y/N：</label>
+        <div class="layui-input-inline">
+            <select name="yn">
+                <option value="">不选择参数</option>
+                <option value="y">更新(多个 read)</option>
+                <option value="n">重启，插入(单个read)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">脚本：</label>
+        <div class="layui-input-inline">
+            <select name="script" lay-verify="required">
+                <option value="">不选择参数</option>
+                {% for option in script_options %}
+                    <option value="{{ option }}">{{ option }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" type="button" id="updateButton">更新</button>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <button class="layui-btn" type="button" id="btn1" data-action="directory1">混沌国服</button>
+        <button class="layui-btn" type="button" id="btn2" data-action="directory2">混沌越狱</button>
+        <button class="layui-btn" type="button" id="btn3" data-action="directory3">混沌台湾</button>
+        <button class="layui-btn" type="button" id="btn4" data-action="directory4">ios 马甲2</button>
+        <button class="layui-btn" type="button" id="btn5" data-action="directory5">ios 马甲32</button>
+        <button class="layui-btn" type="button" id="btn6" data-action="directory6">360 正式</button>
+        <button class="layui-btn" type="button" id="btn7" data-action="directory7">360 正式exe</button>
+        <button class="layui-btn" type="button" id="btn8" data-action="directory8">360 极速正式</button>
+        <button class="layui-btn" type="button" id="btn9" data-action="directory9">360 极速exe</button>
+        <button class="layui-btn" type="button" id="btn10" data-action="directory10">韩国pc</button>
+    </div>
+        </form>
+    <div class="layui-form-item">
+        <label class="layui-form-label">执行结果：</label>
+        <div class="layui-input-block">
+            <pre id="executionResult">{{ execution_result }}</pre>
+        </div>
+    </div>
+
+</div>
+<script src="https://cdn.staticfile.org/jquery/3.5.1/jquery.min.js"></script>
+
+<script src="https://cdn.staticfile.org/layui/2.5.6/layui.js"></script>
+<script>
+layui.use('form', function() {
+    var form = layui.form;
+    var layer = layui.layer;
+
+    // 按钮点击事件，请求获取数据
+    $('#btn1, #btn2, #btn3, #btn4, #btn5, #btn6, #btn7, #btn8, #btn9, #btn10').click(function() {
+        var directoryKey = $(this).data('action');
+        requestData(directoryKey);
+    });
+
+    function requestData(directoryKey) {
+        $.post('/get_data', { action: directoryKey }, function(data) {
+            if (data.result === 'success') {
+                layer.msg('数据已加载');
+                // 清空下拉框选项
+                $('select[name="directory1"]').empty();
+                $('select[name="directory2"]').empty();
+                // 添加新的选项
+                $.each(data.options, function(index, option) {
+                    $('select[name="directory1"]').append($('<option>', {
+                        value: option,
+                        text: option
+                    }));
+                    $('select[name="directory2"]').append($('<option>', {
+                        value: option,
+                        text: option
+                    }));
+                });
+                // 重新渲染下拉框
+                form.render('select');
+            } else {
+                layer.msg('数据加载失败');
+            }
+        });
+    }
+
+    // 检查 sessionStorage 是否有存储的参数
+    var storedData = sessionStorage.getItem('selectedParameters');
+    if (storedData) {
+        storedData = JSON.parse(storedData); // 解析存储的参数
+        // 设置下拉框的值
+        $('select[name="directory1"]').val(storedData.directory1);
+        $('select[name="directory2"]').val(storedData.directory2);
+        $('select[name="yn"]').val(storedData.yn);
+        // 重新渲染下拉框
+        form.render('select');
+    }
+
+    // 点击更新按钮执行脚本
+    $('#updateButton').click(function() {
+        // 阻止表单提交的默认行为
+        event.preventDefault();
+        // 获取选中的值并提交表单
+        var directory1 = $('select[name="directory1"]').val() || "";
+        var directory2 = $('select[name="directory2"]').val() || "";
+        var yn = $('select[name="yn"]').val() || "";
+        var script = $('select[name="script"]').val();
+
+        // 检查下拉框的值，如果为空则不包含在参数列表中
+        var parameters = [];
+        if (directory1) {
+            parameters.push(directory1);
+        }
+        if (directory2) {
+            parameters.push(directory2);
+        }
+
+        // 构建命令
+        var command = "";
+        if (yn == 'y') {
+            var sedCommand = `echo '${script}' | sed 's/ \\+#.*//' | xargs awk '!/read/ || ++count == 1' | sed '2iR=y' > temp_script.sh`;
+            var echoCommand = `echo "${parameters.join(' ')}" | sh temp_script.sh`;
+            command = `${sedCommand} && ${echoCommand}`; 
+        } else if (yn == 'n') {
+            command = `echo y | sh ${script}`;
+        } else {
+            command = `echo "${parameters.join(' ')}" | sh ${script}`;
+        }
+
+        // 发送POST请求执行命令，但仅当命令非空时执行
+        if (command.trim() !== "") {
+            $.post('/execute_script', { command: command }, function(data) {
+                // 处理执行结果
+                console.log(data);
+                // 在这里可以将结果显示给用户
+                $('#executionResult').text(data.result);
+                // 存储选中的参数到 sessionStorage
+                sessionStorage.setItem('selectedParameters', JSON.stringify({
+                    directory1: directory1,
+                    directory2: directory2,
+                    yn: yn
+                }));
+            });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
+
